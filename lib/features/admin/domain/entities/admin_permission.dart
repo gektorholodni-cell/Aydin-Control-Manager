@@ -1,0 +1,15 @@
+enum AdminPermission {
+  viewProjects,
+  editProjects,
+  deleteProjects,
+  createTasks,
+  completeTasks,
+  viewFinance,
+  editFinance,
+  uploadDocuments,
+  deleteDocuments,
+  manageEmployees,
+  manageChats,
+  manageReports,
+  manageSettings,
+}

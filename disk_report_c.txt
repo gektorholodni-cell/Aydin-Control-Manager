@@ -1,0 +1,11 @@
+﻿C_TOTAL_GB=237.91
+C_FREE_BEFORE_GB=16.41
+C_FREE_AFTER_GB=16.41
+C_FREED_GB=0
+--- TOP_LARGE_FILES_USERS_GT_700MB ---
+7,14 GB | 2026-07-27 00:03 | C:\Users\User\.android\avd\Pixel_8.avd\userdata-qemu.img.qcow2
+4,29 GB | 2026-07-20 13:53 | C:\Users\User\.android\avd\Pixel_7.avd\userdata-qemu.img.qcow2
+4 GB | 2026-08-10 13:28 | C:\Users\User\.android\avd\Pixel_8.avd\snapshots\default_boot\ram.img
+4 GB | 2026-07-20 13:28 | C:\Users\User\.android\avd\Pixel_7.avd\snapshots\default_boot\ram.img
+3,14 GB | 2026-07-28 22:02 | C:\Users\User\Downloads\AutoCAD.2025\Autodesk.AutoCAD.2025.1.2.ru-en.iso
+--- COMMON_SYSTEM_BIG_FILES ---

@@ -1,0 +1,52 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "disk-report-c",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$out='d:\\\\FlutterProjects\\\\structra\\\\disk_report_c.txt'; $disk=Get-CimInstance Win32_LogicalDisk -Filter \\\"DeviceID='C:'\\\"; $lines=@(); $lines += ('C_TOTAL_GB=' + [math]::Round($disk.Size/1GB,2)); $lines += ('C_FREE_GB=' + [math]::Round($disk.FreeSpace/1GB,2)); $lines += ('C_USED_GB=' + [math]::Round(($disk.Size-$disk.FreeSpace)/1GB,2)); $lines += '--- TOP_LARGE_FILES_USERS_GT_700MB ---'; $large=Get-ChildItem 'C:\\Users' -File -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Length -ge 700MB } | Sort-Object Length -Descending | Select-Object -First 40 FullName,@{n='SizeGB';e={[math]::Round($_.Length/1GB,2)}},LastWriteTime; foreach($f in $large){ $lines += ($f.SizeGB.ToString() + ' GB | ' + $f.LastWriteTime.ToString('yyyy-MM-dd HH:mm') + ' | ' + $f.FullName) }; $lines += '--- COMMON_SYSTEM_BIG_FILES ---'; foreach($p in @('C:\\hiberfil.sys','C:\\pagefile.sys','C:\\swapfile.sys')){ if(Test-Path $p){ $fi=Get-Item $p -ErrorAction SilentlyContinue; if($fi){ $lines += ([math]::Round($fi.Length/1GB,2).ToString() + ' GB | ' + $p) } } }; Set-Content -Path $out -Value $lines -Encoding UTF8"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "disk-clean-and-report-c",
+			"type": "shell",
+			"command": "& { $out = 'd:\\FlutterProjects\\structra\\disk_report_c.txt'; $before = Get-CimInstance Win32_LogicalDisk -Filter \"DeviceID='C:'\"; if (Test-Path $env:TEMP) { Get-ChildItem -Path $env:TEMP -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; if (Test-Path 'C:\\Windows\\Temp') { Get-ChildItem -Path 'C:\\Windows\\Temp' -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; try { Clear-RecycleBin -Force -ErrorAction SilentlyContinue } catch {}; $after = Get-CimInstance Win32_LogicalDisk -Filter \"DeviceID='C:'\"; $lines = @(); $lines += ('C_TOTAL_GB=' + [math]::Round($after.Size/1GB,2)); $lines += ('C_FREE_BEFORE_GB=' + [math]::Round($before.FreeSpace/1GB,2)); $lines += ('C_FREE_AFTER_GB=' + [math]::Round($after.FreeSpace/1GB,2)); $lines += ('C_FREED_GB=' + [math]::Round(($after.FreeSpace-$before.FreeSpace)/1GB,2)); $lines += '--- TOP_LARGE_FILES_USERS_GT_700MB ---'; $large = Get-ChildItem 'C:\\Users' -File -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Length -ge 700MB } | Sort-Object Length -Descending | Select-Object -First 40 FullName,@{n='SizeGB';e={[math]::Round($_.Length/1GB,2)}},LastWriteTime; foreach ($f in $large) { $lines += ($f.SizeGB.ToString() + ' GB | ' + $f.LastWriteTime.ToString('yyyy-MM-dd HH:mm') + ' | ' + $f.FullName) }; $lines += '--- COMMON_SYSTEM_BIG_FILES ---'; foreach ($p in @('C:\\hiberfil.sys','C:\\pagefile.sys','C:\\swapfile.sys')) { if (Test-Path $p) { $fi = Get-Item $p -ErrorAction SilentlyContinue; if ($fi) { $lines += ([math]::Round($fi.Length/1GB,2).ToString() + ' GB | ' + $p) } } }; Set-Content -Path $out -Value $lines -Encoding UTF8; Write-Output ('Report saved: ' + $out) }",
+			"isBackground": false
+		},
+		{
+			"label": "disk-clean-and-report-c-2",
+			"type": "shell",
+			"command": "& { $out = 'd:\\FlutterProjects\\structra\\disk_report_c.txt'; $before = Get-PSDrive -Name C; if (Test-Path $env:TEMP) { Get-ChildItem -Path $env:TEMP -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; if (Test-Path 'C:\\Windows\\Temp') { Get-ChildItem -Path 'C:\\Windows\\Temp' -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; try { Clear-RecycleBin -Force -ErrorAction SilentlyContinue } catch {}; $after = Get-PSDrive -Name C; $total = [double]($after.Used + $after.Free); $lines = @(); $lines += ('C_TOTAL_GB=' + [math]::Round($total/1GB,2)); $lines += ('C_FREE_BEFORE_GB=' + [math]::Round($before.Free/1GB,2)); $lines += ('C_FREE_AFTER_GB=' + [math]::Round($after.Free/1GB,2)); $lines += ('C_FREED_GB=' + [math]::Round(($after.Free-$before.Free)/1GB,2)); $lines += '--- TOP_LARGE_FILES_USERS_GT_700MB ---'; $large = Get-ChildItem 'C:\\Users' -File -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Length -ge 700MB } | Sort-Object Length -Descending | Select-Object -First 40 FullName,@{n='SizeGB';e={[math]::Round($_.Length/1GB,2)}},LastWriteTime; foreach ($f in $large) { $lines += ($f.SizeGB.ToString() + ' GB | ' + $f.LastWriteTime.ToString('yyyy-MM-dd HH:mm') + ' | ' + $f.FullName) }; $lines += '--- COMMON_SYSTEM_BIG_FILES ---'; foreach ($p in @('C:\\hiberfil.sys','C:\\pagefile.sys','C:\\swapfile.sys')) { if (Test-Path $p) { $fi = Get-Item $p -ErrorAction SilentlyContinue; if ($fi) { $lines += ([math]::Round($fi.Length/1GB,2).ToString() + ' GB | ' + $p) } } }; Set-Content -Path $out -Value $lines -Encoding UTF8; Write-Output ('Report saved: ' + $out) }",
+			"isBackground": false
+		},
+		{
+			"label": "c-space-now",
+			"type": "shell",
+			"command": "& { $d=Get-PSDrive -Name C; $total=[math]::Round((($d.Used+$d.Free)/1GB),2); $free=[math]::Round(($d.Free/1GB),2); $used=[math]::Round(($d.Used/1GB),2); Write-Output ('C total GB: ' + $total); Write-Output ('C free GB:  ' + $free); Write-Output ('C used GB:  ' + $used) }",
+			"isBackground": false
+		},
+		{
+			"label": "c-safe-clean",
+			"type": "shell",
+			"command": "& { $before=(Get-PSDrive -Name C).Free; if(Test-Path $env:TEMP){ Get-ChildItem $env:TEMP -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; if(Test-Path 'C:\\Windows\\Temp'){ Get-ChildItem 'C:\\Windows\\Temp' -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; try { Clear-RecycleBin -Force -ErrorAction SilentlyContinue } catch {}; $after=(Get-PSDrive -Name C).Free; $freed=[math]::Round((($after-$before)/1GB),2); Write-Output ('Freed GB: ' + $freed); Write-Output ('Free now GB: ' + [math]::Round(($after/1GB),2)) }",
+			"isBackground": false
+		},
+		{
+			"label": "c-large-user-files",
+			"type": "shell",
+			"command": "& { Write-Output 'Top large files in C:\\Users (>=700MB):'; Get-ChildItem 'C:\\Users' -File -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Length -ge 700MB } | Sort-Object Length -Descending | Select-Object -First 30 @{n='SizeGB';e={[math]::Round($_.Length/1GB,2)}}, LastWriteTime, FullName | Format-Table -AutoSize | Out-String -Width 260 }",
+			"isBackground": false
+		},
+		{
+			"label": "c-large-files-all",
+			"type": "shell",
+			"command": "& { Write-Output 'Top large files on C (>=1GB):'; Get-ChildItem 'C:\\' -File -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Length -ge 1GB } | Sort-Object Length -Descending | Select-Object -First 40 @{n='SizeGB';e={[math]::Round($_.Length/1GB,2)}}, LastWriteTime, FullName | Format-Table -AutoSize | Out-String -Width 300 }",
+			"isBackground": false
+		}
+	]
+}

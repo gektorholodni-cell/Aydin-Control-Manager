@@ -1,0 +1,27 @@
+abstract final class AppRoutes {
+  static const splash = '/splash';
+  static const login = '/login';
+  static const home = '/home';
+  static const globalSearch = '/search';
+  static const chats = '/chats';
+  static const newGroup = '/chats/new-group';
+  static const tasks = '/tasks';
+  static const newTask = '/tasks/new';
+  static const finance = '/finance';
+  static const profile = '/profile';
+  static const settings = '/settings';
+  static const notifications = '/notifications';
+  static const documents = '/documents';
+  static const photoReports = '/photo-reports';
+  static const reports = '/reports';
+  static const admin = '/admin';
+  static const drawings = '/drawings';
+  static const equipment = '/equipment';
+  static const vehicles = '/vehicles';
+  static const warehouse = '/warehouse';
+  static const calendar = '/calendar';
+  static const company = '/company';
+  static const employees = '/employees';
+  static const projects = '/projects';
+  static const newProject = '/projects/new';
+}

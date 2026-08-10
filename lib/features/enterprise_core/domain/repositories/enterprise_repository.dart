@@ -1,0 +1,39 @@
+import '../entities/calendar_event_model.dart';
+import '../entities/chat_model.dart';
+import '../entities/company_model.dart';
+import '../entities/department_model.dart';
+import '../entities/document_model.dart';
+import '../entities/drawing_model.dart';
+import '../entities/equipment_model.dart';
+import '../entities/finance_model.dart';
+import '../entities/message_model.dart';
+import '../entities/notification_model.dart';
+import '../entities/photo_report_model.dart';
+import '../entities/project_model.dart';
+import '../entities/report_model.dart';
+import '../entities/task_model.dart';
+import '../entities/team_model.dart';
+import '../entities/user_model.dart';
+import '../entities/vehicle_model.dart';
+import '../entities/warehouse_item_model.dart';
+
+abstract interface class EnterpriseRepository {
+  List<EnterpriseUser> getUsers();
+  List<EnterpriseCompany> getCompanies();
+  List<EnterpriseDepartment> getDepartments();
+  List<EnterpriseTeam> getTeams();
+  List<EnterpriseProject> getProjects();
+  List<EnterpriseTask> getTasks();
+  List<EnterpriseChat> getChats();
+  List<EnterpriseMessage> getMessages();
+  List<EnterpriseFinanceRecord> getFinanceRecords();
+  List<EnterpriseDocument> getDocuments();
+  List<EnterpriseNotification> getNotifications();
+  List<EnterpriseReport> getReports();
+  List<EnterprisePhotoReport> getPhotoReports();
+  List<EnterpriseEquipment> getEquipment();
+  List<EnterpriseVehicle> getVehicles();
+  List<EnterpriseDrawing> getDrawings();
+  List<EnterpriseWarehouseItem> getWarehouseItems();
+  List<EnterpriseCalendarEvent> getCalendarEvents();
+}
