@@ -56,4 +56,21 @@ class ChatThread {
       hasTyping: hasTyping,
     );
   }
+
+  ChatThread withLastMessage(String text, DateTime at, {required int unreadCount}) {
+    return ChatThread(
+      id: id,
+      type: type,
+      title: title,
+      memberIds: memberIds,
+      adminId: adminId,
+      lastMessage: text,
+      lastMessageAt: at,
+      unreadCount: unreadCount,
+      isPinned: isPinned,
+      isArchived: isArchived,
+      isMuted: isMuted,
+      hasTyping: false,
+    );
+  }
 }

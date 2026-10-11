@@ -25,6 +25,21 @@ class ChatMessage {
   final DateTime sentAt;
   final bool isMine;
   final ChatMessageType type;
+  /// Путь к фото или голосовому: в облаке — путь в хранилище,
+  /// в демо-режиме — локальный файл.
   final String? imagePath;
   final String? voiceDurationLabel;
+}
+
+/// Короткий текст сообщения для списка чатов.
+String chatMessagePreview(ChatMessage message) {
+  switch (message.type) {
+    case ChatMessageType.voice:
+      return 'Голосовое сообщение';
+    case ChatMessageType.image:
+      return 'Фото';
+    case ChatMessageType.sticker:
+    case ChatMessageType.text:
+      return message.text;
+  }
 }

@@ -9,6 +9,7 @@ import '../../features/projects/domain/entities/construction_project.dart';
 import '../../features/tasks/data/datasources/mock_tasks_data.dart';
 import '../../features/tasks/domain/entities/construction_task.dart';
 import '../../features/tasks/domain/enums/task_status.dart';
+import '../../features/chats/data/chats_cloud.dart';
 import 'backend_config.dart';
 import 'cloud_mappers.dart';
 
@@ -74,6 +75,8 @@ class CloudBackend {
   bool get hasSession => isEnabled && _client.auth.currentSession != null;
 
   String? get currentEmail => isEnabled ? _client.auth.currentUser?.email : null;
+
+  String? get currentUserId => isEnabled ? _client.auth.currentUser?.id : null;
 
   Future<void> initialize() async {
     if (_initialized || !BackendConfig.isCloudConfigured) {
@@ -199,6 +202,8 @@ class CloudBackend {
     mockPhotoReports
       ..clear()
       ..addAll(results[2].map(photoReportFromRow));
+
+    await ChatsCloud.instance.refresh();
   }
 
   void _clearLocalData() {
@@ -206,6 +211,7 @@ class CloudBackend {
     mockProjects.clear();
     mockTasks.clear();
     mockPhotoReports.clear();
+    ChatsCloud.instance.clear();
   }
 
   Future<void> saveProject(ConstructionProject project) async {
@@ -250,11 +256,12 @@ class CloudBackend {
   // Фотографии
   // -------------------------------------------------------------------------
 
-  /// Загружает фото в хранилище и возвращает его путь.
+  /// Загружает файл (фото или голосовое) в хранилище и возвращает его путь.
   Future<String> uploadPhoto({
     required String reportId,
     required Uint8List bytes,
     required String fileExtension,
+    String? contentType,
   }) async {
     final companyId = _membership?.companyId;
     if (companyId == null) {
@@ -265,7 +272,9 @@ class CloudBackend {
     await _client.storage.from(photoBucket).uploadBinary(
           path,
           bytes,
-          fileOptions: FileOptions(contentType: ext == 'png' ? 'image/png' : 'image/jpeg'),
+          fileOptions: FileOptions(
+            contentType: contentType ?? (ext == 'png' ? 'image/png' : 'image/jpeg'),
+          ),
         );
     return path;
   }

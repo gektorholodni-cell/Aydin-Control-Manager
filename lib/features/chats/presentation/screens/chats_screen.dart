@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
+import '../../data/chats_cloud.dart';
 import '../../data/repositories/mock_chats_repository.dart';
 import '../../domain/entities/chat_thread.dart';
 import '../../domain/entities/chat_user.dart';
@@ -17,57 +18,70 @@ class ChatsScreen extends StatefulWidget {
 }
 
 class _ChatsScreenState extends State<ChatsScreen> {
-  static const _currentUserId = 'u1';
-
   final TextEditingController _searchController = TextEditingController();
+  final MockChatsRepository _repository = const MockChatsRepository();
+  final ChatsCloud _cloud = ChatsCloud.instance;
   bool _showArchived = false;
-  late final MockChatsRepository _repository;
-  late List<ChatThread> _threads;
-  late final List<ChatUser> _users;
+
+  String get _currentUserId => _cloud.currentUserId;
+  List<ChatThread> get _threads => _repository.getThreads();
+  List<ChatUser> get _users => _repository.getUsers();
 
   @override
   void initState() {
     super.initState();
-    _repository = const MockChatsRepository();
-    _threads = List<ChatThread>.from(_repository.getThreads());
-    _users = _repository.getUsers();
+    _cloud.addListener(_onChatsChanged);
+    _cloud.refresh();
   }
 
   @override
   void dispose() {
+    _cloud.removeListener(_onChatsChanged);
     _searchController.dispose();
     super.dispose();
   }
 
+  void _onChatsChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   void _applyThreadUpdate(String id, ChatThread Function(ChatThread thread) update) {
+    final thread = MockChatsRepository.findThread(id);
+    if (thread == null) {
+      return;
+    }
     setState(() {
-      _threads = _threads
-          .map((ChatThread thread) => thread.id == id ? update(thread) : thread)
-          .toList(growable: false);
+      _repository.updateThread(update(thread));
     });
   }
 
   void _deleteThread(String id) {
-    _repository.deleteChat(id);
     setState(() {
-      _threads = _threads.where((thread) => thread.id != id).toList(growable: false);
+      _repository.deleteChat(id);
     });
+    _cloud.deleteThread(id).catchError((Object _) => _showError('Не удалось удалить чат'));
+  }
+
+  void _showError(String text) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    }
   }
 
   Future<void> _openGroupCreator() async {
     await context.push(AppRoutes.newGroup);
-    if (!mounted) {
-      return;
+    if (mounted) {
+      setState(() {});
     }
-    setState(() {
-      _threads = List<ChatThread>.from(_repository.getThreads());
-    });
   }
 
   Future<void> _createPrivateChat() async {
     final l10n = context.l10n;
     final users = _users.where((u) => u.id != _currentUserId).toList(growable: false);
     String? selectedUserId;
+    ChatThread? createdThread;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -113,10 +127,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
                         onPressed: selectedUserId == null
                             ? null
                             : () {
-                                _repository.createPrivateChat(
-                                  currentUserId: _currentUserId,
-                                  peerUserId: selectedUserId!,
-                                );
+                                createdThread = _startPrivateChat(selectedUserId!);
                                 Navigator.pop(context);
                               },
                         icon: const Icon(Icons.person_add_alt_1_outlined),
@@ -135,9 +146,23 @@ class _ChatsScreenState extends State<ChatsScreen> {
     if (!mounted) {
       return;
     }
-    setState(() {
-      _threads = List<ChatThread>.from(_repository.getThreads());
-    });
+    setState(() {});
+    final thread = createdThread;
+    if (thread != null) {
+      context.go('${AppRoutes.chats}/${thread.id}');
+    }
+  }
+
+  ChatThread _startPrivateChat(String peerUserId) {
+    final before = _threads.map((thread) => thread.id).toSet();
+    final thread = _repository.createPrivateChat(
+      currentUserId: _currentUserId,
+      peerUserId: peerUserId,
+    );
+    if (!before.contains(thread.id)) {
+      _cloud.createThread(thread).catchError((Object _) => _showError('Не удалось создать чат'));
+    }
+    return thread;
   }
 
   @override
@@ -368,7 +393,7 @@ class _ChatList extends StatelessWidget {
             Text(emptyLabel),
             const SizedBox(height: 4),
             Text(
-              'Create private or group chat to start communication.',
+              'Начните личный чат с сотрудником или создайте группу.',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
