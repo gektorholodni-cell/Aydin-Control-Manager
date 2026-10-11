@@ -115,7 +115,7 @@
   "splashTagline": "Корпоративное управление строительством",
 
   "loginWelcomeBack": "С возвращением",
-  "loginSubtitle": "Войдите, чтобы продолжить работу в ACM.",
+  "loginSubtitle": "Введите свои данные, чтобы начать работу.",
   "loginSideTitle": "Единый центр управления стройкой",
   "loginSideSubtitle": "Планируйте проекты, координируйте команды и контролируйте бюджет в одном месте.",
   "commonEmail": "Email",
@@ -738,6 +738,17 @@
   "commonEdit": "Редактировать",
   "commonDelete": "Удалить",
 
-  "validationRequired": "Это поле обязательно."
-}
+  "validationRequired": "Это поле обязательно.",
 
+  "loginTitle": "Вход в систему",
+  "loginAccountSection": "Учётная запись",
+  "loginAboutSection": "О себе",
+  "loginLastName": "Фамилия",
+  "loginFirstName": "Имя",
+  "loginMiddleName": "Отчество (если есть)",
+  "loginPosition": "Должность",
+  "loginPositionHint": "Например, прораб",
+  "loginInvalidEmail": "Введите корректный email.",
+  "homeGreetingNamed": "Добро пожаловать, {name}!",
+  "@homeGreetingNamed": {"placeholders": {"name": {"type": "String"}}}
+}

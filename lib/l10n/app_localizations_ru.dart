@@ -308,7 +308,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get loginWelcomeBack => 'С возвращением';
 
   @override
-  String get loginSubtitle => 'Войдите, чтобы продолжить работу в ACM.';
+  String get loginSubtitle => 'Введите свои данные, чтобы начать работу.';
 
   @override
   String get loginSideTitle => 'Единый центр управления стройкой';
@@ -1944,4 +1944,36 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get validationRequired => 'Это поле обязательно.';
+
+  @override
+  String get loginTitle => 'Вход в систему';
+
+  @override
+  String get loginAccountSection => 'Учётная запись';
+
+  @override
+  String get loginAboutSection => 'О себе';
+
+  @override
+  String get loginLastName => 'Фамилия';
+
+  @override
+  String get loginFirstName => 'Имя';
+
+  @override
+  String get loginMiddleName => 'Отчество (если есть)';
+
+  @override
+  String get loginPosition => 'Должность';
+
+  @override
+  String get loginPositionHint => 'Например, прораб';
+
+  @override
+  String get loginInvalidEmail => 'Введите корректный email.';
+
+  @override
+  String homeGreetingNamed(String name) {
+    return 'Добро пожаловать, $name!';
+  }
 }

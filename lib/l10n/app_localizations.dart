@@ -661,7 +661,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginSubtitle.
   ///
   /// In ru, this message translates to:
-  /// **'Войдите, чтобы продолжить работу в ACM.'**
+  /// **'Введите свои данные, чтобы начать работу.'**
   String get loginSubtitle;
 
   /// No description provided for @loginSideTitle.
@@ -3759,6 +3759,66 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Это поле обязательно.'**
   String get validationRequired;
+
+  /// No description provided for @loginTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вход в систему'**
+  String get loginTitle;
+
+  /// No description provided for @loginAccountSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'Учётная запись'**
+  String get loginAccountSection;
+
+  /// No description provided for @loginAboutSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'О себе'**
+  String get loginAboutSection;
+
+  /// No description provided for @loginLastName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фамилия'**
+  String get loginLastName;
+
+  /// No description provided for @loginFirstName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя'**
+  String get loginFirstName;
+
+  /// No description provided for @loginMiddleName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчество (если есть)'**
+  String get loginMiddleName;
+
+  /// No description provided for @loginPosition.
+  ///
+  /// In ru, this message translates to:
+  /// **'Должность'**
+  String get loginPosition;
+
+  /// No description provided for @loginPositionHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Например, прораб'**
+  String get loginPositionHint;
+
+  /// No description provided for @loginInvalidEmail.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите корректный email.'**
+  String get loginInvalidEmail;
+
+  /// No description provided for @homeGreetingNamed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добро пожаловать, {name}!'**
+  String homeGreetingNamed(String name);
 }
 
 class _AppLocalizationsDelegate

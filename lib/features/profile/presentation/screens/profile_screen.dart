@@ -6,6 +6,7 @@ import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
 import '../../../../core/localization/locale_scope.dart';
 import '../../../../core/theme/theme_mode_scope.dart';
+import '../../../auth/data/user_profile_store.dart';
 import '../../../chats/data/repositories/mock_chats_repository.dart';
 import '../../../employees/data/repositories/mock_employee_repository.dart';
 import '../../../tasks/data/repositories/mock_task_repository.dart';
@@ -24,6 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _notificationsEnabled = true;
   bool _securityEnabled = true;
+  UserProfile _profile = UserProfile.empty;
 
   @override
   void initState() {
@@ -33,11 +35,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadStatusFlags() async {
     final prefs = await SharedPreferences.getInstance();
+    final profile = await UserProfileStore.load();
     if (!mounted) {
       return;
     }
 
     setState(() {
+      _profile = profile;
       _notificationsEnabled = prefs.getBool(_pushNotificationsKey) ?? true;
       _securityEnabled = prefs.getBool(_securityLockKey) ?? true;
     });
@@ -103,16 +107,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          l10n.appTitle,
+                          _profile.isEmpty ? l10n.appTitle : _profile.fullName,
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w800,
                               ),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          l10n.profileHeadline,
+                          _profile.position.isEmpty
+                              ? l10n.profileHeadline
+                              : _profile.position,
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
+                        if (_profile.email.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 4),
+                          Text(
+                            _profile.email,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                         const SizedBox(height: 4),
                         Text(
                           l10n.profileDescription,

@@ -307,7 +307,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginWelcomeBack => 'Welcome Back';
 
   @override
-  String get loginSubtitle => 'Sign in to continue to ACM.';
+  String get loginSubtitle => 'Enter your details to get started.';
 
   @override
   String get loginSideTitle => 'One Construction Command Center';
@@ -1939,4 +1939,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get validationRequired => 'This field is required.';
+
+  @override
+  String get loginTitle => 'Sign in';
+
+  @override
+  String get loginAccountSection => 'Account';
+
+  @override
+  String get loginAboutSection => 'About you';
+
+  @override
+  String get loginLastName => 'Last name';
+
+  @override
+  String get loginFirstName => 'First name';
+
+  @override
+  String get loginMiddleName => 'Middle name (optional)';
+
+  @override
+  String get loginPosition => 'Position';
+
+  @override
+  String get loginPositionHint => 'For example, site foreman';
+
+  @override
+  String get loginInvalidEmail => 'Enter a valid email.';
+
+  @override
+  String homeGreetingNamed(String name) {
+    return 'Welcome, $name!';
+  }
 }

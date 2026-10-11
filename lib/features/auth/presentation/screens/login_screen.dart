@@ -1,9 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../data/user_profile_store.dart';
 import '../widgets/login_form_card.dart';
 import '../widgets/login_header.dart';
 import '../widgets/login_side_panel.dart';
@@ -15,50 +19,104 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   static const _rememberMeKey = 'structra.login.remember_me';
-  static const _roleKey = 'structra.login.role';
 
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _middleNameController;
+  late final TextEditingController _positionController;
+  late final AnimationController _backgroundController;
+  late final AnimationController _exitController;
   bool _isRememberMe = true;
-  String _selectedRole = 'projectManager';
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState();
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
+    _lastNameController = TextEditingController();
+    _firstNameController = TextEditingController();
+    _middleNameController = TextEditingController();
+    _positionController = TextEditingController();
+    _backgroundController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 14),
+    )..repeat();
+    _exitController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
     _restoreSavedLoginPrefs();
   }
 
   Future<void> _restoreSavedLoginPrefs() async {
     final prefs = await SharedPreferences.getInstance();
+    final isRememberMe = prefs.getBool(_rememberMeKey) ?? true;
+    final profile =
+        isRememberMe ? await UserProfileStore.load() : UserProfile.empty;
     if (!mounted) {
       return;
     }
 
     setState(() {
-      _isRememberMe = prefs.getBool(_rememberMeKey) ?? true;
-      _selectedRole = prefs.getString(_roleKey) ?? 'projectManager';
+      _isRememberMe = isRememberMe;
+      _emailController.text = profile.email;
+      _lastNameController.text = profile.lastName;
+      _firstNameController.text = profile.firstName;
+      _middleNameController.text = profile.middleName;
+      _positionController.text = profile.position;
     });
   }
 
-  Future<void> _persistLoginPrefs() async {
+  Future<void> _persistRememberMe() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_rememberMeKey, _isRememberMe);
-    await prefs.setString(_roleKey, _selectedRole);
   }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _lastNameController.dispose();
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _positionController.dispose();
+    _backgroundController.dispose();
+    _exitController.dispose();
     super.dispose();
   }
 
-  void _onLoginPressed() {
-    _persistLoginPrefs();
+  Future<void> _onLoginPressed() async {
+    if (_isSubmitting) return;
+    FocusScope.of(context).unfocus();
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    await Future.wait(<Future<void>>[
+      _persistRememberMe(),
+      UserProfileStore.save(
+        UserProfile(
+          email: _emailController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          firstName: _firstNameController.text.trim(),
+          middleName: _middleNameController.text.trim(),
+          position: _positionController.text.trim(),
+        ),
+      ),
+      Future<void>.delayed(const Duration(milliseconds: 650)),
+    ]);
+    if (!mounted) return;
+
+    await _exitController.forward();
+    if (!mounted) return;
     context.go(AppRoutes.home);
   }
 
@@ -119,108 +177,162 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF071520),
-      body: Stack(
-        children: <Widget>[
-          const Positioned.fill(
-            child: IgnorePointer(
-              child: CustomPaint(painter: _LoginBgPainter()),
-            ),
-          ),
-          SafeArea(
-            child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final bool isTablet = constraints.maxWidth >= 900;
-            final double formWidth = isTablet
-                ? 430
-                : constraints.maxWidth > 600
-                    ? 460
-                    : constraints.maxWidth;
+    final exit = CurvedAnimation(parent: _exitController, curve: Curves.easeInCubic);
 
-            final formSection = Align(
-              alignment: Alignment.center,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: formWidth),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    const LoginHeader(),
-                    const SizedBox(height: 28),
-                    LoginFormCard(
-                      emailController: _emailController,
-                      passwordController: _passwordController,
-                      isRememberMe: _isRememberMe,
-                      onRememberMeChanged: (bool value) {
-                        setState(() {
-                          _isRememberMe = value;
-                        });
-                        _persistLoginPrefs();
-                      },
-                      selectedRole: _selectedRole,
-                      onRoleChanged: (String role) {
-                        setState(() {
-                          _selectedRole = role;
-                        });
-                        _persistLoginPrefs();
-                      },
-                      onForgotPassword: _onForgotPassword,
-                      onLoginPressed: _onLoginPressed,
-                    ),
-                  ],
+    return Theme(
+      data: AppTheme.dark,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF071520),
+        body: Stack(
+          children: <Widget>[
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _LoginBgPainter(animation: _backgroundController),
                 ),
               ),
-            );
+            ),
+            SafeArea(
+              child: AnimatedBuilder(
+                animation: exit,
+                builder: (BuildContext context, Widget? child) {
+                  return Opacity(
+                    opacity: 1 - exit.value,
+                    child: Transform.scale(
+                      scale: 1 - exit.value * 0.06,
+                      child: child,
+                    ),
+                  );
+                },
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final bool isTablet = constraints.maxWidth >= 900;
+                    final double formWidth = isTablet ? 440 : 460;
 
-            return AnimatedSwitcher(
-              duration: const Duration(milliseconds: 350),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              child: Padding(
-                key: ValueKey<bool>(isTablet),
-                padding: const EdgeInsets.all(24),
-                child: isTablet
-                    ? Row(
-                        children: <Widget>[
-                          const Expanded(child: LoginSidePanel()),
-                          const SizedBox(width: 28),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              child: formSection,
+                    final formSection = Align(
+                      alignment: Alignment.center,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: formWidth),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            const LoginHeader(),
+                            const SizedBox(height: 28),
+                            LoginFormCard(
+                              formKey: _formKey,
+                              emailController: _emailController,
+                              passwordController: _passwordController,
+                              lastNameController: _lastNameController,
+                              firstNameController: _firstNameController,
+                              middleNameController: _middleNameController,
+                              positionController: _positionController,
+                              isRememberMe: _isRememberMe,
+                              onRememberMeChanged: (bool value) {
+                                setState(() {
+                                  _isRememberMe = value;
+                                });
+                                _persistRememberMe();
+                              },
+                              isSubmitting: _isSubmitting,
+                              onForgotPassword: _onForgotPassword,
+                              onLoginPressed: _onLoginPressed,
                             ),
-                          ),
-                        ],
-                      )
-                    : SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: formSection,
+                          ],
                         ),
                       ),
+                    );
+
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 350),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      child: Padding(
+                        key: ValueKey<bool>(isTablet),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isTablet ? 24 : 16,
+                          vertical: 16,
+                        ),
+                        child: isTablet
+                            ? Row(
+                                children: <Widget>[
+                                  const Expanded(child: LoginSidePanel()),
+                                  const SizedBox(width: 28),
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      child: formSection,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : SingleChildScrollView(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 20),
+                                  child: formSection,
+                                ),
+                              ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            );
-          },
+            ),
+          ],
         ),
-          ),
-        ],
       ),
     );
   }
 }
 
 class _LoginBgPainter extends CustomPainter {
-  const _LoginBgPainter();
+  _LoginBgPainter({required this.animation}) : super(repaint: animation);
+
+  final Animation<double> animation;
 
   @override
   void paint(Canvas canvas, Size size) {
+    _drawGlows(canvas, size);
     _drawGrid(canvas, size);
     _drawCitySilhouette(canvas, size);
   }
 
+  // Два мягких световых пятна медленно плавают по фону.
+  void _drawGlows(Canvas canvas, Size size) {
+    final t = animation.value * 2 * math.pi;
+    final glows = <(Offset, double, Color)>[
+      (
+        Offset(
+          size.width * (0.2 + 0.12 * math.sin(t)),
+          size.height * (0.18 + 0.06 * math.cos(t)),
+        ),
+        size.shortestSide * 0.9,
+        const Color(0xFF1E6FB0),
+      ),
+      (
+        Offset(
+          size.width * (0.85 + 0.1 * math.cos(t)),
+          size.height * (0.7 + 0.08 * math.sin(t)),
+        ),
+        size.shortestSide * 0.8,
+        const Color(0xFF0F9D8E),
+      ),
+    ];
+
+    for (final (center, radius, color) in glows) {
+      final paint = Paint()
+        ..shader = RadialGradient(
+          colors: <Color>[
+            color.withValues(alpha: 0.28),
+            color.withValues(alpha: 0),
+          ],
+        ).createShader(Rect.fromCircle(center: center, radius: radius));
+      canvas.drawCircle(center, radius, paint);
+    }
+  }
+
   void _drawGrid(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF0E2D47)
+      ..color = const Color(0xFF0E2D47).withValues(alpha: 0.6)
       ..strokeWidth = 0.5;
     const spacing = 32.0;
     for (double x = 0; x <= size.width; x += spacing) {
@@ -232,7 +344,7 @@ class _LoginBgPainter extends CustomPainter {
   }
 
   void _drawCitySilhouette(Canvas canvas, Size size) {
-    final fill = Paint()..color = const Color(0xFF0D2438);
+    final fill = Paint()..color = const Color(0xFF0D2438).withValues(alpha: 0.8);
     final edge = Paint()
       ..color = const Color(0xFF1A3D5A)
       ..style = PaintingStyle.stroke
@@ -262,5 +374,5 @@ class _LoginBgPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_LoginBgPainter old) => false;
+  bool shouldRepaint(_LoginBgPainter old) => old.animation != animation;
 }
