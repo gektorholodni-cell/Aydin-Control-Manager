@@ -32,11 +32,17 @@ class CompanyMembership {
 
 /// Сотрудник компании.
 class CompanyMember {
-  const CompanyMember({required this.id, required this.fullName, required this.role});
+  const CompanyMember({
+    required this.id,
+    required this.fullName,
+    required this.role,
+    this.phone = '',
+  });
 
   final String id;
   final String fullName;
   final String role;
+  final String phone;
 }
 
 /// Результат попытки входа.
@@ -188,7 +194,7 @@ class CloudBackend {
       _client.from('projects').select().order('created_at', ascending: false),
       _client.from('tasks').select().order('created_at', ascending: false),
       _client.from('photo_reports').select().order('created_at', ascending: false),
-      _client.from('profiles').select('id, full_name, role').order('full_name'),
+      _client.from('profiles').select('id, full_name, role, phone').order('full_name'),
     ]);
 
     _members = results[3].map(memberFromRow).toList(growable: false);
@@ -204,6 +210,31 @@ class CloudBackend {
       ..addAll(results[2].map(photoReportFromRow));
 
     await ChatsCloud.instance.refresh();
+  }
+
+  /// Сохраняет телефон текущего пользователя, чтобы коллеги могли позвонить.
+  Future<void> updateMyPhone(String phone) async {
+    final userId = currentUserId;
+    if (!hasSession || userId == null) {
+      return;
+    }
+    await _client.from('profiles').update(<String, dynamic>{'phone': phone.trim()}).eq('id', userId);
+    _members = _members
+        .map(
+          (member) => member.id == userId
+              ? CompanyMember(id: member.id, fullName: member.fullName, role: member.role, phone: phone.trim())
+              : member,
+        )
+        .toList(growable: false);
+  }
+
+  CompanyMember? memberById(String id) {
+    for (final member in _members) {
+      if (member.id == id) {
+        return member;
+      }
+    }
+    return null;
   }
 
   void _clearLocalData() {

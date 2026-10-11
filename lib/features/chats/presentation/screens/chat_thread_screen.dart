@@ -8,7 +8,9 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
+import '../../../../core/backend/cloud_backend.dart';
 import '../../../../core/constants/app_routes.dart';
+import '../../../../shared/support/support_contact.dart';
 import '../../../../core/localization/context_l10n.dart';
 import '../../data/chats_cloud.dart';
 import '../../data/repositories/mock_chats_repository.dart';
@@ -378,6 +380,12 @@ class _ChatThreadScreenState extends State<ChatThreadScreen> {
           ],
         ),
         actions: <Widget>[
+          if (thread.type == ChatThreadType.private)
+            IconButton(
+              onPressed: () => _callPeer(thread),
+              icon: const Icon(Icons.call_outlined),
+              tooltip: 'Позвонить',
+            ),
           IconButton(
             onPressed: () => context.push('${AppRoutes.chats}/${thread.id}/info'),
             icon: const Icon(Icons.info_outline),
@@ -431,6 +439,16 @@ ListView.builder(
         ],
       ),
     );
+  }
+
+  void _callPeer(ChatThread thread) {
+    final peerId = thread.memberIds.firstWhere((id) => id != _currentUserId, orElse: () => '');
+    final phone = CloudBackend.instance.memberById(peerId)?.phone ?? '';
+    if (phone.trim().isEmpty) {
+      _showError('Сотрудник ещё не указал телефон. Его можно добавить в разделе «Сотрудники».');
+      return;
+    }
+    callPhone(phone);
   }
 
   String _senderName(List<ChatUser> users, String senderId) {

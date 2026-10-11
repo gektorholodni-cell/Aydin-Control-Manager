@@ -14,6 +14,7 @@ CompanyMember memberFromRow(Map<String, dynamic> row) {
     id: row['id'] as String? ?? '',
     fullName: row['full_name'] as String? ?? '',
     role: row['role'] as String? ?? '',
+    phone: row['phone'] as String? ?? '',
   );
 }
 
