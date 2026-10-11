@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+
+import '../../../../core/backend/cloud_backend.dart';
+import '../../../../core/constants/app_routes.dart';
 
 import '../../../../core/localization/context_l10n.dart';
 import '../../../../core/localization/locale_scope.dart';
@@ -677,6 +681,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.logout),
+                    title: const Text('Выйти из аккаунта'),
+                    subtitle: CloudBackend.instance.currentEmail == null
+                        ? null
+                        : Text(CloudBackend.instance.currentEmail!),
+                    onTap: () async {
+                      await CloudBackend.instance.signOut();
+                      if (context.mounted) {
+                        context.go(AppRoutes.login);
+                      }
+                    },
                   ),
                 ),
               ],

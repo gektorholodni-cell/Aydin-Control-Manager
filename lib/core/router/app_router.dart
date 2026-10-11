@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/auth/presentation/screens/company_setup_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/admin/presentation/screens/admin_panel_screen.dart';
 import '../../features/chats/presentation/screens/chat_info_screen.dart';
@@ -53,6 +54,15 @@ final GoRouter appRouter = GoRouter(
         return _buildTransitionPage(
           state: state,
           child: const LoginScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.companySetup,
+      pageBuilder: (BuildContext context, GoRouterState state) {
+        return _buildTransitionPage(
+          state: state,
+          child: const CompanySetupScreen(),
         );
       },
     ),
