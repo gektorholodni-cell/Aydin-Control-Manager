@@ -25,6 +25,10 @@ class MockTaskRepository implements TaskRepository {
     mockTasks.insert(0, task);
   }
 
+  void removeTask(String id) {
+    mockTasks.removeWhere((ConstructionTask item) => item.id == id);
+  }
+
   @override
   void updateTask(ConstructionTask task) {
     final index = mockTasks.indexWhere((ConstructionTask item) => item.id == task.id);

@@ -133,6 +133,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
 
+    appRouter.go(AppRoutes.finance);
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
@@ -157,26 +159,28 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Home expandable sections open without type cast errors', (WidgetTester tester) async {
+  testWidgets('Home sections sheet and assistant respond', (WidgetTester tester) async {
     await _pumpApp(tester);
-
-    // Use a tall surface so all ListView sections are rendered at once
-    await tester.binding.setSurfaceSize(const Size(400, 3000));
+    await tester.binding.setSurfaceSize(const Size(400, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     appRouter.go(AppRoutes.home);
     await tester.pumpAndSettle();
 
-    final sectionFinder = find.byType(ExpansionTile);
-    expect(sectionFinder, findsWidgets);
+    await tester.tap(find.text('Ещё'));
+    await tester.pumpAndSettle();
+    expect(find.text('Все разделы'), findsOneWidget);
+    expect(find.text('Техподдержка'), findsOneWidget);
+    Navigator.of(tester.element(find.text('Все разделы'))).pop();
+    await tester.pumpAndSettle();
 
-    final sectionCount = tester.widgetList(sectionFinder).length;
-    for (var i = 0; i < sectionCount; i++) {
-      tester.takeException();
-      await tester.tap(sectionFinder.at(i));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull, reason: 'Expansion tile index failed: $i');
-    }
+    appRouter.go(AppRoutes.assistant);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'помощь');
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Вот что я умею'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
 }

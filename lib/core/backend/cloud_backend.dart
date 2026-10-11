@@ -29,6 +29,15 @@ class CompanyMembership {
   final String role;
 }
 
+/// Сотрудник компании.
+class CompanyMember {
+  const CompanyMember({required this.id, required this.fullName, required this.role});
+
+  final String id;
+  final String fullName;
+  final String role;
+}
+
 /// Результат попытки входа.
 enum SignInResult { signedIn, invalidCredentials, emailNotConfirmed }
 
@@ -50,11 +59,15 @@ class CloudBackend {
 
   bool _initialized = false;
   CompanyMembership? _membership;
+  List<CompanyMember> _members = const <CompanyMember>[];
 
   /// Облачный режим включён (ключи заданы и клиент инициализирован).
   bool get isEnabled => _initialized;
 
   CompanyMembership? get membership => _membership;
+
+  /// Сотрудники компании (загружаются в [syncAll]).
+  List<CompanyMember> get members => _members;
 
   SupabaseClient get _client => Supabase.instance.client;
 
@@ -172,7 +185,10 @@ class CloudBackend {
       _client.from('projects').select().order('created_at', ascending: false),
       _client.from('tasks').select().order('created_at', ascending: false),
       _client.from('photo_reports').select().order('created_at', ascending: false),
+      _client.from('profiles').select('id, full_name, role').order('full_name'),
     ]);
+
+    _members = results[3].map(memberFromRow).toList(growable: false);
 
     mockProjects
       ..clear()
@@ -186,6 +202,7 @@ class CloudBackend {
   }
 
   void _clearLocalData() {
+    _members = const <CompanyMember>[];
     mockProjects.clear();
     mockTasks.clear();
     mockPhotoReports.clear();
@@ -203,6 +220,13 @@ class CloudBackend {
       return;
     }
     await _client.from('tasks').upsert(taskToRow(task));
+  }
+
+  Future<void> deleteTask(String taskId) async {
+    if (!hasSession) {
+      return;
+    }
+    await _client.from('tasks').delete().eq('id', taskId);
   }
 
   Future<void> updateTaskStatus(String taskId, TaskStatus status) async {

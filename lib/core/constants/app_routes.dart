@@ -3,6 +3,7 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const companySetup = '/company-setup';
   static const home = '/home';
+  static const assistant = '/assistant';
   static const globalSearch = '/search';
   static const chats = '/chats';
   static const newGroup = '/chats/new-group';

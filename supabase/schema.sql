@@ -256,3 +256,28 @@ create policy "company photos delete" on storage.objects
     bucket_id = 'photo-reports'
     and (storage.foldername(name))[1] = public.current_company_id()::text
   );
+
+-- ---------------------------------------------------------------------------
+-- Личные финансы: каждый пользователь видит и меняет только свою запись
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.personal_finance (
+  user_id uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.personal_finance enable row level security;
+
+drop policy if exists "own finance" on public.personal_finance;
+create policy "own finance" on public.personal_finance
+  for all to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
+
+-- ---------------------------------------------------------------------------
+-- Обновление 2: фото в задачах, телефон сотрудника
+-- ---------------------------------------------------------------------------
+
+alter table public.tasks add column if not exists photos text[] not null default '{}';
+alter table public.profiles add column if not exists phone text not null default '';

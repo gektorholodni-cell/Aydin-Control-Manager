@@ -9,6 +9,14 @@ import 'cloud_backend.dart';
 // Преобразование строк таблиц Supabase (см. supabase/schema.sql)
 // в сущности приложения и обратно.
 
+CompanyMember memberFromRow(Map<String, dynamic> row) {
+  return CompanyMember(
+    id: row['id'] as String? ?? '',
+    fullName: row['full_name'] as String? ?? '',
+    role: row['role'] as String? ?? '',
+  );
+}
+
 CompanyMembership membershipFromRow(Map<String, dynamic> row) {
   final company = (row['companies'] as Map<String, dynamic>?) ?? const <String, dynamic>{};
   return CompanyMembership(
@@ -84,7 +92,7 @@ ConstructionTask taskFromRow(Map<String, dynamic> row) {
     updatedAt: _date(row['updated_at']) ?? createdAt,
     comments: <String>[],
     activityHistory: <String>[],
-    beforePhotos: <String>[],
+    beforePhotos: _stringList(row['photos']),
     afterPhotos: <String>[],
     documents: <String>[],
   );
@@ -104,6 +112,9 @@ Map<String, dynamic> taskToRow(ConstructionTask task) {
     'deadline': task.deadline.toUtc().toIso8601String(),
     'progress': task.progress,
     'estimated_cost': task.estimatedCost,
+    // Колонка photos появилась в update_2.sql; пустой список не отправляем,
+    // чтобы задачи без фото сохранялись и в базе без этого обновления.
+    if (task.beforePhotos.isNotEmpty) 'photos': task.beforePhotos,
     'updated_at': task.updatedAt.toUtc().toIso8601String(),
   };
 }

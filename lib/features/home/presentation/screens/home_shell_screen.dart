@@ -82,11 +82,11 @@ class _HomeShellScreenState extends State<HomeShellScreen>
         icon: Icons.home_outlined,
         activeIcon: Icons.home,
       ),
-      _NavDestination(
-        route: AppRoutes.chats,
-        label: l10n.navChats,
-        icon: Icons.chat_bubble_outline,
-        activeIcon: Icons.chat_bubble,
+      const _NavDestination(
+        route: AppRoutes.assistant,
+        label: 'Помощник',
+        icon: Icons.auto_awesome_outlined,
+        activeIcon: Icons.auto_awesome,
       ),
       _NavDestination(
         route: AppRoutes.tasks,
@@ -95,10 +95,10 @@ class _HomeShellScreenState extends State<HomeShellScreen>
         activeIcon: Icons.task,
       ),
       _NavDestination(
-        route: AppRoutes.finance,
-        label: l10n.navFinance,
-        icon: Icons.account_balance_wallet_outlined,
-        activeIcon: Icons.account_balance_wallet,
+        route: AppRoutes.chats,
+        label: l10n.navChats,
+        icon: Icons.chat_bubble_outline,
+        activeIcon: Icons.chat_bubble,
       ),
       _NavDestination(
         route: AppRoutes.profile,
@@ -120,7 +120,7 @@ class _HomeShellScreenState extends State<HomeShellScreen>
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex(destinations),
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: destinations
             .map(
               (_NavDestination destination) => NavigationDestination(

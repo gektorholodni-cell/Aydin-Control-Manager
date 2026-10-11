@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/backend/personal_finance_store.dart';
 import '../../../../core/localization/context_l10n.dart';
 
 enum _FinanceType { income, expense }
@@ -44,6 +45,34 @@ class _FinanceEntry {
   final _PaymentMethod method;
   final String receipt;
 
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'id': id,
+        'type': type.name,
+        'amount': amount,
+        'category': category.name,
+        'project': project,
+        'description': description,
+        'date': date.toIso8601String(),
+        'method': method.name,
+        'receipt': receipt,
+      };
+
+  static _FinanceEntry fromJson(Map<String, dynamic> json) {
+    T byName<T extends Enum>(List<T> values, Object? name, T fallback) =>
+        values.firstWhere((T value) => value.name == name, orElse: () => fallback);
+    return _FinanceEntry(
+      id: json['id'] as String? ?? '${DateTime.now().microsecondsSinceEpoch}',
+      type: byName(_FinanceType.values, json['type'], _FinanceType.expense),
+      amount: (json['amount'] as num?)?.toDouble() ?? 0,
+      category: byName(_ExpenseCategory.values, json['category'], _ExpenseCategory.other),
+      project: json['project'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+      method: byName(_PaymentMethod.values, json['method'], _PaymentMethod.cash),
+      receipt: json['receipt'] as String? ?? '',
+    );
+  }
+
   _FinanceEntry copyWith({
     _FinanceType? type,
     double? amount,
@@ -68,13 +97,6 @@ class _FinanceEntry {
   }
 }
 
-class _FinanceUser {
-  const _FinanceUser({required this.id, required this.displayName});
-
-  final String id;
-  final String displayName;
-}
-
 class _FinanceLedger {
   _FinanceLedger({
     required this.cashKzt,
@@ -83,10 +105,32 @@ class _FinanceLedger {
     required this.entries,
   });
 
+  factory _FinanceLedger.empty() =>
+      _FinanceLedger(cashKzt: 0, cardKzt: 0, walletKzt: 0, entries: <_FinanceEntry>[]);
+
+  factory _FinanceLedger.fromJson(Map<String, dynamic> json) {
+    return _FinanceLedger(
+      cashKzt: (json['cashKzt'] as num?)?.toDouble() ?? 0,
+      cardKzt: (json['cardKzt'] as num?)?.toDouble() ?? 0,
+      walletKzt: (json['walletKzt'] as num?)?.toDouble() ?? 0,
+      entries: ((json['entries'] as List?) ?? const <Object?>[])
+          .whereType<Map<String, dynamic>>()
+          .map(_FinanceEntry.fromJson)
+          .toList(growable: false),
+    );
+  }
+
   double cashKzt;
   double cardKzt;
   double walletKzt;
   List<_FinanceEntry> entries;
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'cashKzt': cashKzt,
+        'cardKzt': cardKzt,
+        'walletKzt': walletKzt,
+        'entries': entries.map((_FinanceEntry entry) => entry.toJson()).toList(),
+      };
 }
 
 class FinanceScreen extends StatefulWidget {
@@ -98,19 +142,15 @@ class FinanceScreen extends StatefulWidget {
 
 class _FinanceScreenState extends State<FinanceScreen> {
   String _searchQuery = '';
-  int _searchFieldRevision = 0;
+  final int _searchFieldRevision = 0;
 
   static const _usdRate = 470.0;
   static const _eurRate = 510.0;
 
-  final List<_FinanceUser> _users = const <_FinanceUser>[
-    _FinanceUser(id: 'u1', displayName: 'Пользователь 1'),
-    _FinanceUser(id: 'u2', displayName: 'Пользователь 2'),
-    _FinanceUser(id: 'u3', displayName: 'Пользователь 3'),
-  ];
+  static const _store = PersonalFinanceStore();
 
-  late final Map<String, _FinanceLedger> _ledgers;
-  String _activeUserId = 'u1';
+  _FinanceLedger _ledger = _FinanceLedger.empty();
+  bool _isLoading = true;
   _FinanceCurrency _currency = _FinanceCurrency.kzt;
 
   _ExpenseCategory? _categoryFilter;
@@ -120,29 +160,38 @@ class _FinanceScreenState extends State<FinanceScreen> {
   @override
   void initState() {
     super.initState();
-    _ledgers = <String, _FinanceLedger>{
-      'u1': _FinanceLedger(
-        cashKzt: 0,
-        cardKzt: 0,
-        walletKzt: 0,
-        entries: <_FinanceEntry>[],
-      ),
-      'u2': _FinanceLedger(
-        cashKzt: 0,
-        cardKzt: 0,
-        walletKzt: 0,
-        entries: <_FinanceEntry>[],
-      ),
-      'u3': _FinanceLedger(
-        cashKzt: 0,
-        cardKzt: 0,
-        walletKzt: 0,
-        entries: <_FinanceEntry>[],
-      ),
-    };
+    _load();
   }
 
-  _FinanceLedger get _activeLedger => _ledgers[_activeUserId]!;
+  Future<void> _load() async {
+    try {
+      final data = await _store.load();
+      if (data != null) {
+        _ledger = _FinanceLedger.fromJson(data);
+      }
+    } catch (error) {
+      _showError('Не удалось загрузить финансы: $error');
+    }
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _save() async {
+    try {
+      await _store.save(_ledger.toJson());
+    } catch (error) {
+      _showError('Не удалось сохранить: $error');
+    }
+  }
+
+  void _showError(String text) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    }
+  }
+
+  _FinanceLedger get _activeLedger => _ledger;
 
   double _currencyRate(_FinanceCurrency currency) {
     switch (currency) {
@@ -405,6 +454,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
                             .toList(growable: false);
                       }
                     });
+                    _save();
 
                     Navigator.pop(context);
                   },
@@ -471,6 +521,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
                   ..cardKzt = _toKzt(card)
                   ..walletKzt = _toKzt(wallet);
               });
+              _save();
               Navigator.pop(context);
             },
             child: Text(l10n.commonSave),
@@ -572,7 +623,9 @@ class _FinanceScreenState extends State<FinanceScreen> {
         icon: const Icon(Icons.add),
         label: Text(l10n.financeAddEntryButton),
       ),
-      body: LayoutBuilder(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : LayoutBuilder(
         builder: (context, constraints) {
           final content = ListView(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 96),
@@ -581,32 +634,11 @@ class _FinanceScreenState extends State<FinanceScreen> {
             title: l10n.financeSectionAccessControl,
             child: Column(
               children: <Widget>[
-                DropdownButtonFormField<String>(
-                  key: ValueKey<String>(_activeUserId),
-                  isExpanded: true,
-                  initialValue: _activeUserId,
-                  decoration: InputDecoration(labelText: l10n.financeActiveUserLabel),
-                  items: _users
-                      .map(
-                        (user) => DropdownMenuItem<String>(
-                          value: user.id,
-                          child: Text(user.displayName),
-                        ),
-                      )
-                      .toList(growable: false),
-                  onChanged: (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _activeUserId = value;
-                      _searchQuery = '';
-                      _searchFieldRevision++;
-                      _projectFilter = null;
-                      _methodFilter = null;
-                      _categoryFilter = null;
-                    });
-                  },
+                const ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.lock_outline),
+                  title: Text('Личные финансы'),
+                  subtitle: Text('Эти записи видите только вы. Руководитель и коллеги их не видят.'),
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<_FinanceCurrency>(
@@ -787,6 +819,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
                           ledger.entries =
                               ledger.entries.where((item) => item.id != entry.id).toList(growable: false);
                         });
+                        _save();
                       }
                     },
                     itemBuilder: (context) => <PopupMenuEntry<String>>[
