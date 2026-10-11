@@ -115,7 +115,7 @@
   "splashTagline": "Кәсіпорын деңгейіндегі құрылыс менеджменті",
 
   "loginWelcomeBack": "Қайта қош келдіңіз",
-  "loginSubtitle": "ACM жүйесіне кіру үшін аккаунтқа өтіңіз.",
+  "loginSubtitle": "Жұмысты бастау үшін деректеріңізді енгізіңіз.",
   "loginSideTitle": "Құрылысты басқарудың бір орталығы",
   "loginSideSubtitle": "Жобаларды жоспарлаңыз, команданы үйлестіріңіз және бюджетті бір жерден басқарыңыз.",
   "commonEmail": "Email",
@@ -738,5 +738,16 @@
   "commonEdit": "Өңдеу",
   "commonDelete": "Жою",
 
-  "validationRequired": "Бұл өріс міндетті."
+  "validationRequired": "Бұл өріс міндетті.",
+
+  "loginTitle": "Жүйеге кіру",
+  "loginAccountSection": "Тіркелгі",
+  "loginAboutSection": "Өзіңіз туралы",
+  "loginLastName": "Тегі",
+  "loginFirstName": "Аты",
+  "loginMiddleName": "Әкесінің аты (бар болса)",
+  "loginPosition": "Лауазымы",
+  "loginPositionHint": "Мысалы, прораб",
+  "loginInvalidEmail": "Дұрыс email енгізіңіз.",
+  "homeGreetingNamed": "Қош келдіңіз, {name}!"
 }

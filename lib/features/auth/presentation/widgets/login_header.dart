@@ -10,133 +10,108 @@ class LoginHeader extends StatefulWidget {
   State<LoginHeader> createState() => _LoginHeaderState();
 }
 
-class _LoginHeaderState extends State<LoginHeader> with TickerProviderStateMixin {
-  late final AnimationController _logoController;
-  late final AnimationController _titleController;
-  late final AnimationController _subtitleController;
+class _LoginHeaderState extends State<LoginHeader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
   late final Animation<double> _logoOpacity;
   late final Animation<double> _logoScale;
+  late final Animation<double> _brandOpacity;
   late final Animation<double> _titleOpacity;
-  late final Animation<Offset> _titleSlide;
   late final Animation<double> _subtitleOpacity;
-  late final Animation<Offset> _subtitleSlide;
 
   @override
   void initState() {
     super.initState();
 
-    // Logo animation
-    _logoController = AnimationController(
+    _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 1200),
     )..forward();
 
-    _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.easeOutCubic),
-    );
+    Animation<double> interval(double begin, double end, [Curve curve = Curves.easeOutCubic]) {
+      return CurvedAnimation(
+        parent: _controller,
+        curve: Interval(begin, end, curve: curve),
+      );
+    }
 
-    _logoScale = Tween<double>(begin: 0.8, end: 1).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.easeOutBack),
-    );
-
-    // Title animation
-    _titleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    _titleOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _titleController, curve: Curves.easeOutCubic),
-    );
-
-    _titleSlide = Tween<Offset>(
-      begin: const Offset(-0.2, 0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _titleController, curve: Curves.easeOutCubic),
-    );
-
-    // Subtitle animation
-    _subtitleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-
-    _subtitleOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _subtitleController, curve: Curves.easeOutCubic),
-    );
-
-    _subtitleSlide = Tween<Offset>(
-      begin: const Offset(-0.2, 0.1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _subtitleController, curve: Curves.easeOutCubic),
-    );
-
-    // Staggered animation timing
-    _logoController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _titleController.forward();
-        Future<void>.delayed(const Duration(milliseconds: 150), () {
-          if (mounted) {
-            _subtitleController.forward();
-          }
-        });
-      }
-    });
+    _logoOpacity = interval(0, 0.45);
+    _logoScale = Tween<double>(begin: 0.7, end: 1)
+        .animate(interval(0, 0.6, Curves.easeOutBack));
+    _brandOpacity = interval(0.2, 0.6);
+    _titleOpacity = interval(0.35, 0.8);
+    _subtitleOpacity = interval(0.5, 1);
   }
 
   @override
   void dispose() {
-    _logoController.dispose();
-    _titleController.dispose();
-    _subtitleController.dispose();
+    _controller.dispose();
     super.dispose();
+  }
+
+  Widget _slideIn(Animation<double> animation, Widget child) {
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (BuildContext context, Widget? child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, (1 - animation.value) * 14),
+            child: child,
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        // Animated logo
         FadeTransition(
           opacity: _logoOpacity,
           child: ScaleTransition(
             scale: _logoScale,
-            child: const StructraLogo(size: 72),
+            child: const StructraLogo(size: 68, showWordmark: false),
           ),
         ),
-        const SizedBox(height: 28),
-        // Animated title
-        SlideTransition(
-          position: _titleSlide,
-          child: FadeTransition(
-            opacity: _titleOpacity,
-            child: Text(
-              l10n.loginWelcomeBack,
-              style: textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
-              ),
+        const SizedBox(height: 14),
+        _slideIn(
+          _brandOpacity,
+          Text(
+            l10n.appTitle.toUpperCase(),
+            style: textTheme.labelMedium?.copyWith(
+              color: const Color(0xFF7FB8E6),
+              letterSpacing: 2.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        _slideIn(
+          _titleOpacity,
+          Text(
+            l10n.loginTitle,
+            textAlign: TextAlign.center,
+            style: textTheme.headlineMedium?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
         const SizedBox(height: 8),
-        // Animated subtitle with accent
-        SlideTransition(
-          position: _subtitleSlide,
-          child: FadeTransition(
-            opacity: _subtitleOpacity,
-            child: Text(
-              l10n.loginSubtitle,
-              style: textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
+        _slideIn(
+          _subtitleOpacity,
+          Text(
+            l10n.loginSubtitle,
+            textAlign: TextAlign.center,
+            style: textTheme.bodyLarge?.copyWith(
+              color: Colors.white.withValues(alpha: 0.65),
             ),
           ),
         ),

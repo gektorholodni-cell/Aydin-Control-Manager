@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
+import '../../../auth/data/user_profile_store.dart';
 import '../widgets/current_project_card.dart';
 import '../widgets/dashboard_widgets_panel.dart';
 import '../widgets/premium_summary_strip.dart';
@@ -24,6 +25,19 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _actionsExpanded = false;
   bool _widgetsExpanded = false;
   bool _activityExpanded = false;
+  UserProfile _profile = UserProfile.empty;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final profile = await UserProfileStore.load();
+    if (!mounted) return;
+    setState(() => _profile = profile);
+  }
 
   void _openRouteFromDrawer(String route) {
     Navigator.of(context).pop();
@@ -40,9 +54,15 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: <Widget>[
               ListTile(
-                leading: const Icon(Icons.dashboard_customize_outlined),
-                title: Text(l10n.appTitle),
-                subtitle: Text(l10n.homeOverviewSubtitle),
+                leading: _profile.isEmpty
+                    ? const Icon(Icons.dashboard_customize_outlined)
+                    : CircleAvatar(child: Text(_profile.initials)),
+                title: Text(_profile.isEmpty ? l10n.appTitle : _profile.fullName),
+                subtitle: Text(
+                  _profile.position.isEmpty
+                      ? l10n.homeOverviewSubtitle
+                      : _profile.position,
+                ),
               ),
               const Divider(height: 1),
               Expanded(
@@ -185,8 +205,12 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 20),
         children: <Widget>[
           _HomeHeroCard(
-            title: l10n.homeGreeting,
-            subtitle: l10n.homeOverviewSubtitle,
+            title: _profile.isEmpty
+                ? l10n.homeGreeting
+                : l10n.homeGreetingNamed(_profile.greetingName),
+            subtitle: _profile.position.isEmpty
+                ? l10n.homeOverviewSubtitle
+                : '${_profile.position} · ${l10n.homeOverviewSubtitle}',
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -294,7 +318,7 @@ class _HomeHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
+    final card = Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
@@ -318,6 +342,25 @@ class _HomeHeroCard extends StatelessWidget {
           Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
+    );
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.easeOutCubic,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: KeyedSubtree(key: ValueKey<String>(title), child: card),
+      ),
+      builder: (BuildContext context, double t, Widget? child) {
+        return Opacity(
+          opacity: t,
+          child: Transform.translate(
+            offset: Offset(0, (1 - t) * 18),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }

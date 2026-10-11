@@ -115,7 +115,7 @@
   "splashTagline": "Enterprise-grade construction management",
 
   "loginWelcomeBack": "Welcome Back",
-  "loginSubtitle": "Sign in to continue to ACM.",
+  "loginSubtitle": "Enter your details to get started.",
   "loginSideTitle": "One Construction Command Center",
   "loginSideSubtitle": "Plan projects, coordinate teams, and control budgets in one place.",
   "commonEmail": "Email",
@@ -738,5 +738,16 @@
   "commonEdit": "Edit",
   "commonDelete": "Delete",
 
-  "validationRequired": "This field is required."
+  "validationRequired": "This field is required.",
+
+  "loginTitle": "Sign in",
+  "loginAccountSection": "Account",
+  "loginAboutSection": "About you",
+  "loginLastName": "Last name",
+  "loginFirstName": "First name",
+  "loginMiddleName": "Middle name (optional)",
+  "loginPosition": "Position",
+  "loginPositionHint": "For example, site foreman",
+  "loginInvalidEmail": "Enter a valid email.",
+  "homeGreetingNamed": "Welcome, {name}!"
 }

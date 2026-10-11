@@ -308,7 +308,7 @@ class AppLocalizationsKk extends AppLocalizations {
   String get loginWelcomeBack => 'Қайта қош келдіңіз';
 
   @override
-  String get loginSubtitle => 'ACM жүйесіне кіру үшін аккаунтқа өтіңіз.';
+  String get loginSubtitle => 'Жұмысты бастау үшін деректеріңізді енгізіңіз.';
 
   @override
   String get loginSideTitle => 'Құрылысты басқарудың бір орталығы';
@@ -1948,4 +1948,36 @@ class AppLocalizationsKk extends AppLocalizations {
 
   @override
   String get validationRequired => 'Бұл өріс міндетті.';
+
+  @override
+  String get loginTitle => 'Жүйеге кіру';
+
+  @override
+  String get loginAccountSection => 'Тіркелгі';
+
+  @override
+  String get loginAboutSection => 'Өзіңіз туралы';
+
+  @override
+  String get loginLastName => 'Тегі';
+
+  @override
+  String get loginFirstName => 'Аты';
+
+  @override
+  String get loginMiddleName => 'Әкесінің аты (бар болса)';
+
+  @override
+  String get loginPosition => 'Лауазымы';
+
+  @override
+  String get loginPositionHint => 'Мысалы, прораб';
+
+  @override
+  String get loginInvalidEmail => 'Дұрыс email енгізіңіз.';
+
+  @override
+  String homeGreetingNamed(String name) {
+    return 'Қош келдіңіз, $name!';
+  }
 }
