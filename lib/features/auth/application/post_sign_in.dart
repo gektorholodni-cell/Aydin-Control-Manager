@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/backend/cloud_backend.dart';
 import '../../../core/constants/app_routes.dart';
 
@@ -10,6 +12,12 @@ Future<String> resolvePostSignInRoute() async {
   if (membership == null) {
     return AppRoutes.companySetup;
   }
-  await backend.syncAll();
+  try {
+    await backend.syncAll();
+  } catch (error) {
+    // Ошибка загрузки данных не должна мешать входу: главный экран
+    // повторит загрузку сам.
+    debugPrint('syncAll after sign-in failed: $error');
+  }
   return AppRoutes.home;
 }

@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/photo_reports/data/datasources/mock_photo_reports_data.dart';
@@ -194,7 +193,7 @@ class CloudBackend {
       _client.from('projects').select().order('created_at', ascending: false),
       _client.from('tasks').select().order('created_at', ascending: false),
       _client.from('photo_reports').select().order('created_at', ascending: false),
-      _client.from('profiles').select('id, full_name, role, phone').order('full_name'),
+      _loadMemberRows(),
     ]);
 
     _members = results[3].map(memberFromRow).toList(growable: false);
@@ -209,10 +208,28 @@ class CloudBackend {
       ..clear()
       ..addAll(results[2].map(photoReportFromRow));
 
-    await ChatsCloud.instance.refresh();
+    try {
+      await ChatsCloud.instance.refresh();
+    } catch (error) {
+      // Чаты не должны ломать загрузку проектов и задач.
+      debugPrint('Chats refresh failed: $error');
+    }
   }
 
-  /// Сохраняет телефон текущего пользователя, чтобы коллеги могли позвонить.
+  /// Сотрудники компании. Колонка phone появляется в update_2.sql;
+  /// если её ещё нет, загружаем список без телефонов.
+  Future<List<Map<String, dynamic>>> _loadMemberRows() async {
+    try {
+      return await _client.from('profiles').select('id, full_name, role, phone').order('full_name');
+    } on PostgrestException catch (error) {
+      if (error.code != '42703') {
+        rethrow;
+      }
+      return _client.from('profiles').select('id, full_name, role').order('full_name');
+    }
+  }
+
+    /// Сохраняет телефон текущего пользователя, чтобы коллеги могли позвонить.
   Future<void> updateMyPhone(String phone) async {
     final userId = currentUserId;
     if (!hasSession || userId == null) {
