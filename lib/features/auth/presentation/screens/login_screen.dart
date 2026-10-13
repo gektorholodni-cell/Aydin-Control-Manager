@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/backend/cloud_backend.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
+import '../../application/cloud_sign_in.dart';
 import '../widgets/login_form_card.dart';
 import '../widgets/login_header.dart';
 import '../widgets/login_side_panel.dart';
@@ -57,9 +59,26 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _onLoginPressed() {
+  bool _isSigningIn = false;
+
+  Future<void> _onLoginPressed() async {
     _persistLoginPrefs();
-    context.go(AppRoutes.home);
+    if (!CloudBackend.instance.isEnabled) {
+      context.go(AppRoutes.home);
+      return;
+    }
+    if (_isSigningIn) {
+      return;
+    }
+    setState(() => _isSigningIn = true);
+    await runCloudSignIn(
+      context,
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+    if (mounted) {
+      setState(() => _isSigningIn = false);
+    }
   }
 
   void _onForgotPassword() {
@@ -100,6 +119,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 final email = emailController.text.trim();
                 emailController.dispose();
                 Navigator.pop(ctx);
+                if (email.isNotEmpty && CloudBackend.instance.isEnabled) {
+                  CloudBackend.instance.resetPassword(email).catchError((Object _) {});
+                }
                 if (email.isNotEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

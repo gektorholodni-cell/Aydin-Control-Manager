@@ -1,0 +1,50 @@
+name: Deploy Web App
+
+on:
+  push:
+    # TODO: remove the claude/ branch before merging PR #2 (used to preview the web build).
+    branches: [main, master, claude/project-thread-3jydia]
+  workflow_dispatch: # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
+jobs:
+  deploy-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.4'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web app
+        run: >
+          flutter build web --release
+          --dart-define-from-file=config/supabase.json
+          --base-href "/${{ github.event.repository.name }}/"
+
+      # GitHub Pages serves 404.html for unknown paths; reuse the app shell.
+      - name: Add SPA fallback
+        run: cp build/web/index.html build/web/404.html
+
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web
+          force_orphan: true

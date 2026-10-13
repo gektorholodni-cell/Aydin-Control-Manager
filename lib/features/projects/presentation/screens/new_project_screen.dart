@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/backend/cloud_backend.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
 import '../../data/repositories/mock_project_repository.dart';
@@ -72,7 +73,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
     return DateFormat.yMMMd(locale).format(date);
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -93,8 +94,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
 
     final budget = double.tryParse(_budgetController.text.replaceAll(',', '.').trim()) ?? 0;
     final now = DateTime.now();
-    MockProjectRepository().addProject(
-      ConstructionProject(
+    final project = ConstructionProject(
         id: 'prj-${now.microsecondsSinceEpoch}',
         name: _nameController.text.trim(),
         client: _clientController.text.trim(),
@@ -111,8 +111,22 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
         weather: 'N/A',
         lastActivity: 'Проект создан',
         recentUpdates: const <String>[],
-      ),
     );
+
+    try {
+      await CloudBackend.instance.saveProject(project);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Не удалось сохранить проект: $error')),
+        );
+      }
+      return;
+    }
+    MockProjectRepository().addProject(project);
+    if (!mounted) {
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(context.l10n.projectCreatedLocalInfo)),

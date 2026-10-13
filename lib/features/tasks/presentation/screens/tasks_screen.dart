@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/backend/cloud_backend.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
 import '../../data/repositories/mock_task_repository.dart';
@@ -19,7 +20,10 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
-  static const _currentUserName = 'Пользователь 1';
+  static const _demoUserName = 'Пользователь 1';
+
+  String get _currentUserName =>
+      CloudBackend.instance.membership?.fullName ?? _demoUserName;
 
   final MockTaskRepository _repository = const MockTaskRepository();
   late List<ConstructionTask> _allTasks;
@@ -85,13 +89,22 @@ class _TasksScreenState extends State<TasksScreen> {
 
   void _moveTask(String taskId, TaskStatus newStatus) {
     setState(() {
-      _allTasks = _allTasks
-          .map(
-            (task) => task.id == taskId
-                ? task.copyWith(status: newStatus, updatedAt: DateTime.now())
-                : task,
-          )
-          .toList(growable: false);
+      _allTasks = _allTasks.map((task) {
+        if (task.id != taskId) {
+          return task;
+        }
+        final updated = task.copyWith(status: newStatus, updatedAt: DateTime.now());
+        _repository.updateTask(updated);
+        return updated;
+      }).toList(growable: false);
+    });
+
+    CloudBackend.instance.updateTaskStatus(taskId, newStatus).catchError((Object error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Статус не сохранён на сервере: $error')),
+        );
+      }
     });
   }
 

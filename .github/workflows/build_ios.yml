@@ -25,7 +25,7 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS app (unsigned)
-        run: flutter build ios --no-codesign --release
+        run: flutter build ios --no-codesign --release --dart-define-from-file=config/supabase.json
 
       - name: Package as IPA
         run: |

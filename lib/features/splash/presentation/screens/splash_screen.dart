@@ -3,9 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/backend/cloud_backend.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
 import '../../../../shared/presentation/widgets/structra_logo.dart';
+import '../../../auth/application/post_sign_in.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -68,9 +70,20 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) _logoController.forward();
     });
 
-    Future<void>.delayed(const Duration(milliseconds: 3000), () {
-      if (mounted) context.go(AppRoutes.login);
-    });
+    Future<void>.delayed(const Duration(milliseconds: 3000), _openNextScreen);
+  }
+
+  Future<void> _openNextScreen() async {
+    var route = AppRoutes.login;
+    if (CloudBackend.instance.hasSession) {
+      try {
+        route = await resolvePostSignInRoute();
+      } catch (_) {
+        // Нет сети или сессия устарела — пусть пользователь войдёт заново.
+        route = AppRoutes.login;
+      }
+    }
+    if (mounted) context.go(route);
   }
 
   @override

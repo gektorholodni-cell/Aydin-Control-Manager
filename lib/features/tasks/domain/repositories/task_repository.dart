@@ -6,4 +6,6 @@ abstract interface class TaskRepository {
   ConstructionTask? getTaskById(String id);
 
   void addTask(ConstructionTask task);
+
+  void updateTask(ConstructionTask task);
 }

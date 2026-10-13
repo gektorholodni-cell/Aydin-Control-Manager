@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/assistant/presentation/assistant_screen.dart';
+import '../../features/auth/presentation/screens/company_setup_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/admin/presentation/screens/admin_panel_screen.dart';
 import '../../features/chats/presentation/screens/chat_info_screen.dart';
@@ -56,6 +58,15 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(
+      path: AppRoutes.companySetup,
+      pageBuilder: (BuildContext context, GoRouterState state) {
+        return _buildTransitionPage(
+          state: state,
+          child: const CompanySetupScreen(),
+        );
+      },
+    ),
     ShellRoute(
       builder: (
         BuildContext context,
@@ -74,6 +85,18 @@ final GoRouter appRouter = GoRouter(
             return _buildTransitionPage(
               state: state,
               child: const HomeScreen(),
+            );
+          },
+        ),
+        GoRoute(
+          path: AppRoutes.assistant,
+          pageBuilder: (BuildContext context, GoRouterState state) {
+            return _buildTransitionPage(
+              state: state,
+              child: AssistantScreen(
+                key: ValueKey<String?>(state.uri.queryParameters['q']),
+                initialText: state.uri.queryParameters['q'],
+              ),
             );
           },
         ),

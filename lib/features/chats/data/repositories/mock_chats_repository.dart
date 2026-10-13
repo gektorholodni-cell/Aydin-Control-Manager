@@ -10,6 +10,91 @@ class MockChatsRepository implements ChatsRepository {
   static final List<ChatThread> _threadsStore = List<ChatThread>.from(mockChatThreads);
   static final List<ChatMessage> _messagesStore = List<ChatMessage>.from(mockChatMessages);
 
+  // ---------------------------------------------------------------------------
+  // Синхронизация с облаком (ChatsCloud). Закрепление, архив, «без звука» и
+  // счётчик непрочитанных — личные настройки, поэтому они хранятся только
+  // на устройстве и сохраняются при обновлении данных с сервера.
+  // ---------------------------------------------------------------------------
+
+  static void replaceAll({
+    required List<ChatUser> users,
+    required List<ChatThread> threads,
+    required List<ChatMessage> messages,
+  }) {
+    mockChatUsers
+      ..clear()
+      ..addAll(users);
+    final merged = threads.map(_keepLocalFlags).toList();
+    _threadsStore
+      ..clear()
+      ..addAll(merged);
+    _messagesStore
+      ..clear()
+      ..addAll(messages);
+  }
+
+  static void clearAll() {
+    mockChatUsers.clear();
+    _threadsStore.clear();
+    _messagesStore.clear();
+  }
+
+  static bool hasMessage(String id) => _messagesStore.any((m) => m.id == id);
+
+  static ChatThread? findThread(String id) {
+    for (final thread in _threadsStore) {
+      if (thread.id == id) {
+        return thread;
+      }
+    }
+    return null;
+  }
+
+  /// Добавляет сообщение, пришедшее с сервера, и обновляет его чат.
+  static void putIncomingMessage(ChatMessage message, {required bool countAsUnread}) {
+    if (hasMessage(message.id)) {
+      return;
+    }
+    _messagesStore.add(message);
+    final index = _threadsStore.indexWhere((t) => t.id == message.chatId);
+    if (index == -1) {
+      return;
+    }
+    final thread = _threadsStore[index];
+    _threadsStore[index] = thread.withLastMessage(
+      chatMessagePreview(message),
+      message.sentAt,
+      unreadCount: countAsUnread ? thread.unreadCount + 1 : thread.unreadCount,
+    );
+  }
+
+  static void putThread(ChatThread thread) {
+    final index = _threadsStore.indexWhere((t) => t.id == thread.id);
+    if (index == -1) {
+      _threadsStore.add(thread);
+    } else {
+      _threadsStore[index] = _keepLocalFlags(thread);
+    }
+  }
+
+  static void removeThread(String id) {
+    _threadsStore.removeWhere((t) => t.id == id);
+    _messagesStore.removeWhere((m) => m.chatId == id);
+  }
+
+  static ChatThread _keepLocalFlags(ChatThread thread) {
+    final local = findThread(thread.id);
+    if (local == null) {
+      return thread;
+    }
+    return thread.copyWith(
+      isPinned: local.isPinned,
+      isArchived: local.isArchived,
+      isMuted: local.isMuted,
+      unreadCount: local.unreadCount,
+    );
+  }
+
   @override
   List<ChatUser> getUsers() => mockChatUsers;
 
@@ -48,20 +133,10 @@ class MockChatsRepository implements ChatsRepository {
 
     final threadIndex = _threadsStore.indexWhere((t) => t.id == chatId);
     if (threadIndex != -1) {
-      final thread = _threadsStore[threadIndex];
-      _threadsStore[threadIndex] = ChatThread(
-        id: thread.id,
-        type: thread.type,
-        title: thread.title,
-        memberIds: thread.memberIds,
-        adminId: thread.adminId,
-        lastMessage: text,
-        lastMessageAt: message.sentAt,
+      _threadsStore[threadIndex] = _threadsStore[threadIndex].withLastMessage(
+        chatMessagePreview(message),
+        message.sentAt,
         unreadCount: 0,
-        isPinned: thread.isPinned,
-        isArchived: thread.isArchived,
-        isMuted: thread.isMuted,
-        hasTyping: false,
       );
     }
 
@@ -82,14 +157,23 @@ class MockChatsRepository implements ChatsRepository {
       }
     }
 
-    final peer = mockChatUsers.firstWhere((user) => user.id == peerUserId);
+    final peer = mockChatUsers.firstWhere(
+      (user) => user.id == peerUserId,
+      orElse: () => ChatUser(
+        id: peerUserId,
+        fullName: 'Сотрудник',
+        role: '',
+        isOnline: false,
+        lastSeen: DateTime.now(),
+      ),
+    );
     final newThread = ChatThread(
       id: 'chat_${DateTime.now().microsecondsSinceEpoch}',
       type: ChatThreadType.private,
       title: peer.fullName,
       memberIds: <String>[currentUserId, peerUserId],
       adminId: currentUserId,
-      lastMessage: 'Chat created',
+      lastMessage: 'Чат создан',
       lastMessageAt: DateTime.now(),
       unreadCount: 0,
       isPinned: false,
@@ -114,7 +198,7 @@ class MockChatsRepository implements ChatsRepository {
       title: title,
       memberIds: uniqueMembers,
       adminId: currentUserId,
-      lastMessage: 'Group created',
+      lastMessage: 'Группа создана',
       lastMessageAt: DateTime.now(),
       unreadCount: 0,
       isPinned: false,
@@ -139,9 +223,8 @@ class MockChatsRepository implements ChatsRepository {
 
   @override
   bool deleteChat(String chatId) {
-    _messagesStore.removeWhere((message) => message.chatId == chatId);
-    final previousLength = _threadsStore.length;
-    _threadsStore.removeWhere((thread) => thread.id == chatId);
-    return _threadsStore.length != previousLength;
+    final existed = findThread(chatId) != null;
+    removeThread(chatId);
+    return existed;
   }
 }

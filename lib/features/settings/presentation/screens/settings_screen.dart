@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/backend/cloud_backend.dart';
+import '../../../../core/constants/app_routes.dart';
+
 import '../../../../core/localization/context_l10n.dart';
+import '../../../../shared/support/support_contact.dart';
 import '../../../../core/localization/locale_scope.dart';
 import '../../../../core/theme/theme_mode_scope.dart';
 
@@ -653,18 +658,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onTap: () => _showInfoSheet(
                           context,
                           l10n.settingsHelpCenter,
-                          'Откройте нужный раздел приложения или обратитесь к локальным данным проекта для проверки состояния.',
+                          'Проще всего работать через Помощника на главном экране: напишите «Поставь задачу Иванову: ...» или «Мои задачи». Если остались вопросы, позвоните в поддержку: ${SupportContact.phoneDisplay}.',
                         ),
                       ),
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.support_agent_outlined),
                         title: Text(l10n.settingsContactSupport),
-                        onTap: () => _showInfoSheet(
-                          context,
-                          l10n.settingsContactSupport,
-                          'Поддержка пока работает как локальная справка. Опишите проблему в чатах или задачах проекта.',
-                        ),
+                        subtitle: const Text(SupportContact.phoneDisplay),
+                        onTap: SupportContact.call,
                       ),
                       const Divider(height: 1),
                       ListTile(
@@ -673,10 +675,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onTap: () => _showInfoSheet(
                           context,
                           l10n.settingsSendFeedback,
-                          'Отправьте отзыв через рабочий чат или сохраните замечание в задаче для команды.',
+                          'Напишите нам в WhatsApp ${SupportContact.phoneDisplay}: каждое замечание читаем лично.',
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const SupportCard(),
+                const SizedBox(height: 12),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.logout),
+                    title: const Text('Выйти из аккаунта'),
+                    subtitle: CloudBackend.instance.currentEmail == null
+                        ? null
+                        : Text(CloudBackend.instance.currentEmail!),
+                    onTap: () async {
+                      await CloudBackend.instance.signOut();
+                      if (context.mounted) {
+                        context.go(AppRoutes.login);
+                      }
+                    },
                   ),
                 ),
               ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/backend/cloud_backend.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
 import '../../data/repositories/mock_employee_repository.dart';
@@ -9,6 +10,7 @@ import '../../domain/enums/employee_role.dart';
 import '../widgets/employee_card.dart';
 import '../widgets/employee_filter_sort_bar.dart';
 import '../widgets/employee_search_bar.dart';
+import 'team_screen.dart';
 
 class EmployeesScreen extends StatefulWidget {
   const EmployeesScreen({super.key});
@@ -65,6 +67,10 @@ class _EmployeesScreenState extends State<EmployeesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // В облачном режиме показываем настоящих сотрудников компании.
+    if (CloudBackend.instance.membership != null) {
+      return const TeamScreen();
+    }
     final l10n = context.l10n;
     final employees = _buildEmployees();
 

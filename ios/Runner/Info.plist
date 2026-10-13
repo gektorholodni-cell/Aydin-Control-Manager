@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Микрофон нужен для голосовых сообщений в чатах.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Доступ к фото нужен, чтобы прикреплять снимки к задачам, фотоотчётам и чатам.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Камера нужна, чтобы фотографировать работы для отчётов.</string>
 </dict>
 </plist>

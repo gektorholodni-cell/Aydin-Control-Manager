@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
+import '../../data/chats_cloud.dart';
 import '../../data/repositories/mock_chats_repository.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_thread.dart';
@@ -21,7 +22,7 @@ class ChatInfoScreen extends StatefulWidget {
 }
 
 class _ChatInfoScreenState extends State<ChatInfoScreen> {
-  static const _currentUserId = 'u1';
+  String get _currentUserId => ChatsCloud.instance.currentUserId;
 
   late final MockChatsRepository _repository;
   late ChatThread? _thread;
@@ -47,8 +48,14 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
     super.dispose();
   }
 
-  void _syncThread(ChatThread updated) {
+  void _syncThread(ChatThread updated, {bool shared = false}) {
     _repository.updateThread(updated);
+    if (shared) {
+      final messenger = ScaffoldMessenger.of(context);
+      ChatsCloud.instance.saveThread(updated).catchError((Object _) {
+        messenger.showSnackBar(const SnackBar(content: Text('Не удалось сохранить изменения')));
+      });
+    }
     setState(() {
       _thread = updated;
       _nameController.text = updated.title;
@@ -86,7 +93,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
     }
 
     final updated = List<String>.from(_thread!.memberIds)..remove(userId);
-    _syncThread(_thread!.copyWith(memberIds: updated));
+    _syncThread(_thread!.copyWith(memberIds: updated), shared: true);
   }
 
   void _addMember(String userId) {
@@ -99,7 +106,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
     }
 
     final updated = List<String>.from(_thread!.memberIds)..add(userId);
-    _syncThread(_thread!.copyWith(memberIds: updated));
+    _syncThread(_thread!.copyWith(memberIds: updated), shared: true);
   }
 
   void _renameGroup() {
@@ -111,7 +118,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
       return;
     }
 
-    _syncThread(_thread!.copyWith(title: title));
+    _syncThread(_thread!.copyWith(title: title), shared: true);
   }
 
   void _leaveGroup() {
@@ -121,13 +128,13 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
 
     final updated = List<String>.from(_thread!.memberIds)..remove(_currentUserId);
     if (updated.isEmpty) {
-      _repository.deleteChat(_thread!.id);
-      context.go(AppRoutes.chats);
+      _deleteChat();
       return;
     }
 
-    _syncThread(_thread!.copyWith(memberIds: updated));
-    context.go('${AppRoutes.chats}/${_thread!.id}');
+    ChatsCloud.instance.saveThread(_thread!.copyWith(memberIds: updated));
+    _repository.deleteChat(_thread!.id);
+    context.go(AppRoutes.chats);
   }
 
   void _deleteChat() {
@@ -135,7 +142,9 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
       return;
     }
 
-    _repository.deleteChat(_thread!.id);
+    final id = _thread!.id;
+    _repository.deleteChat(id);
+    ChatsCloud.instance.deleteThread(id);
     context.go(AppRoutes.chats);
   }
 
@@ -260,7 +269,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
           ...members.map(
             (user) => Card(
               child: ListTile(
-                leading: CircleAvatar(child: Text(user.fullName.substring(0, 1))),
+                leading: CircleAvatar(child: Text(user.fullName.characters.first)),
                 title: Text(user.fullName),
                 subtitle: Text(user.id == thread.adminId ? l10n.chatGroupAdmin : user.role),
                 trailing: thread.type == ChatThreadType.group && user.id != thread.adminId
@@ -280,7 +289,7 @@ class _ChatInfoScreenState extends State<ChatInfoScreen> {
             ...available.map(
               (user) => Card(
                 child: ListTile(
-                  leading: CircleAvatar(child: Text(user.fullName.substring(0, 1))),
+                  leading: CircleAvatar(child: Text(user.fullName.characters.first)),
                   title: Text(user.fullName),
                   subtitle: Text(user.role),
                   trailing: IconButton(

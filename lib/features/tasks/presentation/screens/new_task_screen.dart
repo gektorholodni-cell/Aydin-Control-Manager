@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/backend/cloud_backend.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/localization/context_l10n.dart';
 import '../../../projects/data/repositories/mock_project_repository.dart';
@@ -90,7 +91,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
     return null;
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -150,7 +151,20 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
       documents: <String>[],
     );
 
+    try {
+      await CloudBackend.instance.saveTask(newTask);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Не удалось сохранить задачу: $error')),
+        );
+      }
+      return;
+    }
     _taskRepository.addTask(newTask);
+    if (!mounted) {
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(context.l10n.taskCreatedLocalInfo)),

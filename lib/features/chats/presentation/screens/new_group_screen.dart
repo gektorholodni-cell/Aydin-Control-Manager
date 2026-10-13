@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/localization/context_l10n.dart';
+import '../../data/chats_cloud.dart';
 import '../../data/repositories/mock_chats_repository.dart';
 import '../../domain/entities/chat_user.dart';
 
@@ -13,8 +14,6 @@ class NewGroupScreen extends StatefulWidget {
 }
 
 class _NewGroupScreenState extends State<NewGroupScreen> {
-  static const _currentUserId = 'u1';
-
   final _nameController = TextEditingController();
   final _searchController = TextEditingController();
   final Set<String> _selectedUsers = <String>{};
@@ -30,7 +29,8 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final users = _repository.getUsers();
+    final currentUserId = ChatsCloud.instance.currentUserId;
+    final users = _repository.getUsers().where((ChatUser user) => user.id != currentUserId);
     final query = _searchController.text.trim().toLowerCase();
     final filtered = users.where((ChatUser user) {
       if (query.isEmpty) {
@@ -107,7 +107,7 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
                 },
                 title: Text(user.fullName),
                 subtitle: Text(user.role),
-                secondary: CircleAvatar(child: Text(user.fullName.substring(0, 1))),
+                secondary: CircleAvatar(child: Text(user.fullName.characters.first)),
               );
             },
           ),
@@ -122,11 +122,15 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
                 return;
               }
 
-              _repository.createGroupChat(
-                currentUserId: _currentUserId,
+              final thread = _repository.createGroupChat(
+                currentUserId: currentUserId,
                 title: title,
                 memberIds: _selectedUsers.toList(growable: false),
               );
+              final messenger = ScaffoldMessenger.of(context);
+              ChatsCloud.instance.createThread(thread).catchError((Object _) {
+                messenger.showSnackBar(const SnackBar(content: Text('Не удалось создать группу')));
+              });
               context.pop();
             },
             icon: const Icon(Icons.group_add_outlined),
